@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ria - Find Your Perfect Phone</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600&family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              'brand-background': '#f5f1eb',
+              'brand-text': '#2b2b2b',
+              'brand-primary': '#a0522d',
+              'brand-primary-dark': '#8b5a3c',
+              'brand-border': '#d4c4b0',
+              'brand-card': '#ffffff',
+            },
+            fontFamily: {
+              display: ['var(--font-display)', 'Georgia', 'serif'],
+              body: ['var(--font-body)', 'sans-serif'],
+            },
+          },
+        },
+      }
+    </script>
+  <script type="importmap">
+{
+  "imports": {
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.25.0",
+    "framer-motion": "https://aistudiocdn.com/framer-motion@^11.3.11/"
+  }
+}
+</script>
+<style>
+  :root {
+    --font-display: 'Playfair Display', serif;
+    --font-body: 'Montserrat', sans-serif;
+  }
+  .hero, .hero-content {
+    transition: all 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  body.panel-open .hero {
+    padding-top: 4rem;
+    padding-bottom: 4rem;
+    min-height: 20vh;
+    justify-content: flex-start;
+  }
+  body.panel-open .hero-content {
+    transform: translateY(-25%);
+  }
+  .find-yours-btn-wrapper {
+    transition: max-height 0.7s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease-in-out;
+    max-height: 100px;
+    overflow: hidden;
+  }
+  body.panel-open .find-yours-btn-wrapper {
+    max-height: 0;
+    opacity: 0;
+  }
+  .questionnaire-container {
+    opacity: 0;
+    animation: slideInUp 0.7s 0.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+  @keyframes slideInUp {
+    from {
+      opacity: 0;
+      transform: translateY(40px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  @keyframes fadeInResult {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .animate-fadeInResult {
+    animation: fadeInResult 0.5s ease-in-out forwards;
+  }
+  .custom-select {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%238b5a3c' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+    background-position: right 1rem center;
+    background-repeat: no-repeat;
+    background-size: 1.5em 1.5em;
+    padding-right: 3.5rem;
+  }
+</style>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body class="font-body bg-brand-background text-brand-text overflow-x-hidden">
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>
