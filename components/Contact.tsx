@@ -13,15 +13,16 @@ const Contact: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-12 max-w-5xl mx-auto text-center">
         <div>
           <h3 className="text-2xl mb-4 text-brand-primary font-display font-normal">Phone</h3>
-          <p className="text-lg font-body font-normal text-brand-text">(123) 456-7890</p>
+          <p className="text-lg font-body font-normal text-brand-text">+91 7287800769</p>
+          <p className="text-lg font-body font-normal text-brand-text">+91 7032213891</p>
         </div>
         <div>
           <h3 className="text-2xl mb-4 text-brand-primary font-display font-normal">Email</h3>
-          <p className="text-lg font-body font-normal text-brand-text">hello@reallygreatsite.com</p>
+          <p className="text-lg font-body font-normal text-brand-text">myphone.ai@zohomail.com</p>
         </div>
         <div>
           <h3 className="text-2xl mb-4 text-brand-primary font-display font-normal">Address</h3>
-          <p className="text-lg font-body font-normal text-brand-text">123 Anywhere St., Any City</p>
+          <p className="text-lg font-body font-normal text-brand-text">Hyderabad,India,500001</p>
         </div>
       </div>
       <div className="flex justify-center gap-6 mt-12">
