@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { QUESTIONS } from '../data/questionnaireData';
-import { Answers, Recommendation } from '../types';
+import { Answers, Recommendation, QuestionType } from '../types';
 import { getPhoneRecommendation } from '../services/geminiService';
 
 interface QuestionnaireProps {
@@ -56,8 +56,18 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onReset }) => {
 
   const currentQuestion = QUESTIONS[currentIndex];
 
-  const handleSelectOption = (id: string, value: string) => {
-    setAnswers(prev => ({ ...prev, [id]: value }));
+  const handleAnswer = (id: string, value: string, type: QuestionType) => {
+    if (type === 'multi') {
+      const currentAnswers = (answers[id] as string[]) || [];
+      const newAnswers = currentAnswers.includes(value)
+        ? currentAnswers.filter(v => v !== value)
+        : [...currentAnswers, value];
+      setAnswers(prev => ({ ...prev, [id]: newAnswers }));
+    } else if (type === 'number') {
+      setAnswers(prev => ({ ...prev, [id]: value === '' ? '' : parseFloat(value) }));
+    } else { // 'single' or 'select'
+      setAnswers(prev => ({ ...prev, [id]: value }));
+    }
   };
 
   const handleBack = () => {
@@ -67,8 +77,16 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onReset }) => {
   };
 
   const handleNext = async () => {
-    if (currentQuestion.required && !answers[currentQuestion.id]) {
-      alert('Please select an option to continue.');
+    const currentAnswer = answers[currentQuestion.id];
+    let isAnswered = false;
+    if (currentQuestion.type === 'multi') {
+        isAnswered = Array.isArray(currentAnswer) && currentAnswer.length > 0;
+    } else {
+        isAnswered = currentAnswer !== undefined && currentAnswer !== '';
+    }
+
+    if (currentQuestion.required && !isAnswered) {
+      alert('Please provide an answer to continue.');
       return;
     }
 
@@ -88,6 +106,20 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onReset }) => {
     }
   };
   
+  const handleTryAgain = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      // Pass `true` to indicate this is a retry
+      const result = await getPhoneRecommendation(answers, true);
+      setRecommendation(result);
+    } catch (e: any) {
+      setError(e.message || 'An unexpected error occurred.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
   const resetQuestionnaire = () => {
     setCurrentIndex(0);
     setAnswers({});
@@ -97,7 +129,10 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onReset }) => {
   };
 
   const isLastQuestion = currentIndex === QUESTIONS.length - 1;
-  const answeredCount = Object.values(answers).filter(Boolean).length;
+  const answeredCount = Object.values(answers).filter(val => {
+    if (Array.isArray(val)) return val.length > 0;
+    return val !== undefined && val !== null && val !== '';
+  }).length;
 
   return (
     <div className="w-full max-w-4xl mx-auto questionnaire-container">
@@ -124,32 +159,52 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onReset }) => {
                   <label className="block text-brand-primary-dark mb-3 font-display font-bold text-xl">
                     {currentQuestion.label}{currentQuestion.required ? ' *' : ''}
                   </label>
+                  
+                  {currentQuestion.type === 'number' && (
+                     <input
+                        type="number"
+                        id={currentQuestion.id}
+                        value={answers[currentQuestion.id] as number || ''}
+                        onChange={(e) => handleAnswer(currentQuestion.id, e.target.value, 'number')}
+                        min={currentQuestion.min}
+                        max={currentQuestion.max}
+                        placeholder={currentQuestion.placeholder}
+                        className="bg-white w-full p-4 border-2 border-brand-border rounded-lg text-base font-body focus:outline-none focus:border-brand-primary"
+                    />
+                  )}
+
+                  {(currentQuestion.type === 'single' || currentQuestion.type === 'multi') && (
+                    <div className="flex flex-col gap-2">
+                      {currentQuestion.options?.map(opt => {
+                          const isSelected = currentQuestion.type === 'multi'
+                            ? ((answers[currentQuestion.id] as string[]) || []).includes(opt.value)
+                            : answers[currentQuestion.id] === opt.value;
+                          return (
+                            <button
+                              key={opt.value}
+                              type="button"
+                              onClick={() => handleAnswer(currentQuestion.id, opt.value, currentQuestion.type)}
+                              className={`p-3.5 px-4 rounded-lg border-2 text-left text-lg font-body transition-colors duration-200 ${isSelected ? 'border-brand-primary bg-[#fff7f2]' : 'border-brand-border bg-white'}`}
+                            >
+                              {opt.label}
+                            </button>
+                          );
+                      })}
+                    </div>
+                  )}
+
                   {currentQuestion.type === 'select' && (
                     <select 
                       id={currentQuestion.id} 
-                      value={answers[currentQuestion.id] || ''}
-                      onChange={(e) => handleSelectOption(currentQuestion.id, e.target.value)}
+                      value={answers[currentQuestion.id] as string || ''}
+                      onChange={(e) => handleAnswer(currentQuestion.id, e.target.value, 'select')}
                       className="custom-select bg-white w-full p-4 border-2 border-brand-border rounded-lg text-base font-body focus:outline-none focus:border-brand-primary"
                     >
                       <option value="" disabled>Select an option</option>
-                      {currentQuestion.options.map(opt => (
+                      {currentQuestion.options?.map(opt => (
                         <option key={opt.value} value={opt.value}>{opt.label}</option>
                       ))}
                     </select>
-                  )}
-                  {currentQuestion.type === 'options' && (
-                    <div className="flex flex-col gap-2">
-                      {currentQuestion.options.map(opt => (
-                        <button
-                          key={opt.value}
-                          type="button"
-                          onClick={() => handleSelectOption(currentQuestion.id, opt.value)}
-                          className={`p-3.5 px-4 rounded-lg border-2 text-left text-lg font-body transition-colors duration-200 ${answers[currentQuestion.id] === opt.value ? 'border-brand-primary bg-[#fff7f2]' : 'border-brand-border bg-white'}`}
-                        >
-                          {opt.label}
-                        </button>
-                      ))}
-                    </div>
                   )}
                 </div>
                 <div className="flex items-center gap-4 mt-6 pt-2">
@@ -182,6 +237,10 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onReset }) => {
               <div className="text-center md:text-left">
                   <h4 className="text-3xl font-display font-bold text-brand-text mb-3">{recommendation.phoneName}</h4>
                   <p className="text-brand-text/80 text-lg leading-relaxed font-body">{recommendation.reason}</p>
+                  <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 mt-5">
+                    {recommendation.officialUrl && <a href={recommendation.officialUrl} target="_blank" rel="noopener noreferrer" className="text-sm font-semibold bg-brand-background text-brand-primary py-2 px-4 rounded-full transition hover:bg-brand-border">Official Site</a>}
+                    {recommendation.productUrl && recommendation.storeName && <a href={recommendation.productUrl} target="_blank" rel="noopener noreferrer" className="text-sm font-semibold bg-brand-background text-brand-primary py-2 px-4 rounded-full transition hover:bg-brand-border">View on {recommendation.storeName}</a>}
+                  </div>
               </div>
               <div className="w-full max-w-[200px] mx-auto md:max-w-xs md:mx-0 md:justify-self-end">
                 <div className="bg-brand-background rounded-xl overflow-hidden shadow-lg border-4 border-white ring-2 ring-brand-border">
@@ -189,18 +248,29 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onReset }) => {
                 </div>
               </div>
             </div>
-             <div className="flex justify-center items-center gap-4 mt-8">
+            {error && <p className="text-red-500 text-center mt-4">{error}</p>}
+             <div className="flex justify-between items-center w-full gap-4 mt-8">
                 <button 
                   type="button" 
                   onClick={() => setRecommendation(null)}
-                  className="bg-brand-primary-dark font-body text-white py-2 px-5 rounded-full transition duration-300 hover:opacity-90"
+                  className="bg-brand-primary-dark font-body text-white py-2 px-5 rounded-full transition duration-300 hover:opacity-90 disabled:opacity-50"
+                  disabled={isLoading}
                 >
                   ← Back to Edit
                 </button>
                 <button 
                   type="button" 
+                  onClick={handleTryAgain}
+                  disabled={isLoading}
+                  className="bg-brand-primary font-body text-white py-2 px-5 rounded-full transition duration-300 hover:bg-brand-primary-dark disabled:bg-gray-400 disabled:cursor-wait"
+                >
+                  {isLoading ? 'Retrying...' : 'Try Again'}
+                </button>
+                <button 
+                  type="button" 
                   onClick={resetQuestionnaire}
-                  className="bg-brand-primary text-white py-2.5 px-6 rounded-full font-display italic text-lg transition duration-300 hover:bg-brand-primary-dark"
+                  className="bg-brand-primary text-white py-2.5 px-6 rounded-full font-display italic text-lg transition duration-300 hover:bg-brand-primary-dark disabled:opacity-50"
+                  disabled={isLoading}
                 >
                   Start Over
                 </button>
